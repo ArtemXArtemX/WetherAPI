@@ -50,4 +50,7 @@ dependencies {
     implementation(libs.volley)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.picasso)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.play.services.location)
 }
