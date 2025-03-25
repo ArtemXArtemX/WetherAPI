@@ -10,7 +10,6 @@ import com.bignerdranch.android.wetherapi.Fragments.MainFragment
 import com.bignerdranch.android.wetherapi.databinding.ActivityMainBinding
 import org.json.JSONObject
 
-const val API_KEY = "705bc494d10c4699911154110252203"
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

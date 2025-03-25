@@ -13,10 +13,16 @@ import androidx.fragment.app.setFragmentResultListener
 import com.bignerdranch.android.wetherapi.adapters.VpAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import android.Manifest
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import com.android.volley.Request
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 
+
+const val API_KEY = "705bc494d10c4699911154110252203"
 class MainFragment: Fragment(){
 
     private val fList = listOf(
@@ -42,6 +48,7 @@ class MainFragment: Fragment(){
         super.onViewCreated(view, savedInstanceState)
         checkPermission()
         init()
+        requestWeatherData("London")
     }
 
     private fun init() = with(binding){
@@ -50,6 +57,28 @@ class MainFragment: Fragment(){
         TabLayoutMediator(tabLayout, vp){
                 tab, pos -> tab.text = tList[pos]
         }.attach()
+    }
+
+    private fun requestWeatherData(city: String){
+        val url = "https://api.weatherapi.com/v1/forecast.json?key=" +
+                API_KEY +
+                "&q=" +
+                city +
+                "&days=" +
+                "3" +
+                "&aqi=no&alerts=no"
+        val queue = Volley.newRequestQueue(context)
+        val request = StringRequest(
+            Request.Method.GET,
+            url,
+            {
+                    result -> parseWeatherData(result)
+            },
+            {
+                    error -> Log.d("MyLog", "Error: $error")
+            }
+        )
+        queue.add(request)
     }
 
     private fun permissionListener(){
