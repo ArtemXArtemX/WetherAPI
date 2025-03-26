@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.games.activity)
     testImplementation(libs.junit)
     implementation(libs.volley)
     androidTestImplementation(libs.androidx.junit)

@@ -39,30 +39,8 @@ class HoursFragment : Fragment() {
 
     private fun initRcView() = with(binding){
         rcView.layoutManager = LinearLayoutManager(activity)
-        adapter = WeatherAdapter()
+        adapter = WeatherAdapter(null)
         rcView.adapter = adapter
-        val list = listOf(
-            WeatherModel(
-                "",
-                "12:00",
-                "Sunny",
-                "25°C", "", "", "", ""
-            ),
-            WeatherModel(
-                "",
-                "13:00",
-                "Sunny",
-                "27°C",
-                "", "", "", ""
-            ),
-            WeatherModel(
-                "",
-                "14:00",
-                "Sunny",
-                "35°C",
-                "", "", "", "")
-        )
-        adapter.submitList(list)
     }
 
     private fun getHoursList(wItem: WeatherModel): List<WeatherModel>{

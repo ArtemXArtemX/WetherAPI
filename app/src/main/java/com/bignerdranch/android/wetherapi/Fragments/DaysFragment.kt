@@ -10,9 +10,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bignerdranch.android.wetherapi.MainViewModel
 import com.bignerdranch.android.wetherapi.R
 import com.bignerdranch.android.wetherapi.adapters.WeatherAdapter
+import com.bignerdranch.android.wetherapi.adapters.WeatherModel
 import com.bignerdranch.android.wetherapi.databinding.FragmentHoursBinding
+import com.google.androidgamesdk.gametextinput.Listener
 
-class DaysFragment : Fragment() {
+class DaysFragment : Fragment(), WeatherAdapter.Listener{
     private lateinit var adapter: WeatherAdapter
     private lateinit var binding: FragmentHoursBinding
     private val model: MainViewModel by activityViewModels()
@@ -34,9 +36,13 @@ class DaysFragment : Fragment() {
     }
 
     private fun init() = with(binding){
-        adapter = WeatherAdapter()
+        adapter = WeatherAdapter(this@DaysFragment)
         rcView.layoutManager = LinearLayoutManager(activity)
         rcView.adapter = adapter
+    }
+
+    override fun OnClick(item: WeatherModel) {
+        model.liveDataCurrent.value = item
     }
 
     companion object {
