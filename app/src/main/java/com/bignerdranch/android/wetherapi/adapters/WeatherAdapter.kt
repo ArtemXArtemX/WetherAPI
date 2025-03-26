@@ -12,8 +12,8 @@ import com.squareup.picasso.Picasso
 import android.service.autofill.OnClickAction
 import com.android.volley.Response
 
-class WeatherAdapter(val listener: Response.Listener?) : ListAdapter<WeatherModel, WeatherAdapter.Holder>(Comparator()) {
-    class Holder(view: View, val listener: Picasso.Listener?) : RecyclerView.ViewHolder(view){
+class WeatherAdapter(val listener: Listener?) : ListAdapter<WeatherModel, WeatherAdapter.Holder>(Comparator()) {
+    class Holder(view: View, val listener: Listener?) : RecyclerView.ViewHolder(view){
         val binding = ListItemBinding.bind(view)
         var itemTemp: WeatherModel? = null
         init{
