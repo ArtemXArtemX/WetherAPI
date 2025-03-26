@@ -36,6 +36,8 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.tabs.TabLayoutMediator
 import com.squareup.picasso.Picasso
 import org.json.JSONObject
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 
 
 const val API_KEY = "705bc494d10c4699911154110252203"
@@ -133,29 +135,34 @@ class MainFragment: Fragment(){
 
     private fun updateCurrentCard() = with(binding){
         val db = WeatherDatabase.getDb(requireContext())
-        model.liveDataCurrent.observe(viewLifecycleOwner){
-            val maxMinTemp = "${it.maxTemp}°C/${it.minTemp}°C"
-            val item = DayItem(null,
-                it.city,
-                it.time,
-                it.condition,
-                it.imageUrl,
-                it.currentTemp,
-                it.maxTemp,
-                it.minTemp,
-                it.hours )
-            Thread{
-                db.getDao().insertItem(item)
-            }.start()
-            db.getDao().getAllItem().asLiveData().observe(viewLifecycleOwner){list ->
-                list.forEach{item ->
-                    tvData.text = item.time
-                    tvCity.text = item.city
-                    tvCurrentTemp.text = item.currentTemp.ifEmpty { "${it.maxTemp}°C/${it.minTemp}" } + "°C"
-                    tvCondition.text = item.condition
-                    tvMaxMin.text = if(item.currentTemp.isEmpty()) "" else maxMinTemp
-                    Picasso.get().load("https:" + item.imageUrl).into(imWeather)
-                }
+        if(isOnline(requireContext())) {
+            model.liveDataCurrent.observe(viewLifecycleOwner) {
+                val item = DayItem(
+                    null,
+                    it.city,
+                    it.time,
+                    it.condition,
+                    it.imageUrl,
+                    it.currentTemp,
+                    it.maxTemp,
+                    it.minTemp,
+                    it.hours
+                )
+                Thread {
+                    db.getDao().deleteItem()
+                    db.getDao().insertItem(item)
+                }.start()
+            }
+        }
+        db.getDao().getAllItem().asLiveData().observe(viewLifecycleOwner){list ->
+            list.forEach{item ->
+                val maxMinTemp = "${item.maxTemp}°C/${item.minTemp}°C"
+                tvData.text = item.time
+                tvCity.text = item.city
+                tvCurrentTemp.text = item.currentTemp.ifEmpty { "${item.maxTemp}°C/${item.minTemp}" } + "°C"
+                tvCondition.text = item.condition
+                tvMaxMin.text = if(item.currentTemp.isEmpty()) "" else maxMinTemp
+                Picasso.get().load("https:" + item.imageUrl).into(imWeather)
             }
         }
     }
@@ -184,11 +191,11 @@ class MainFragment: Fragment(){
 
     private fun parseWeatherData(result: String) {
         val mainObject = JSONObject(result)
-        val list = parseDays(mainObject )
+        val list = parseDays(mainObject)
         parseCurrentData(mainObject, list[0])
     }
 
-    private fun parseDays(mainObject: JSONObject): List<WeatherModel>   {
+    private fun parseDays(mainObject: JSONObject): List<WeatherModel>{
         val list = ArrayList<WeatherModel>()
         val daysArray = mainObject.getJSONObject("forecast")
             .getJSONArray("forecastday")
@@ -211,6 +218,28 @@ class MainFragment: Fragment(){
         }
         model.liveDataList.value = list
         return list
+    }
+
+    fun isOnline(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        if (connectivityManager != null) {
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+            if (capabilities != null) {
+                if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_CELLULAR")
+                    return true
+                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_WIFI")
+                    return true
+                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_ETHERNET")
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     private fun parseCurrentData(mainObject: JSONObject, weatherItem: WeatherModel){
