@@ -152,7 +152,7 @@ class MainFragment: Fragment(){
                 "&q=" +
                 city +
                 "&days=" +
-                "3" +
+                "7" +
                 "&aqi=no&alerts=no"
         val queue = Volley.newRequestQueue(context)
         val request = StringRequest(
