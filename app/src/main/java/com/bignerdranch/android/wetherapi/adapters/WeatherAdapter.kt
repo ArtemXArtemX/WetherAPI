@@ -1,16 +1,14 @@
 package com.bignerdranch.android.wetherapi.adapters
 
-import android.view.View
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
-import com.bignerdranch.android.wetherapi.databinding.ListItemBinding
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.bignerdranch.android.wetherapi.R
+import com.bignerdranch.android.wetherapi.databinding.ListItemBinding
 import com.squareup.picasso.Picasso
-import android.service.autofill.OnClickAction
-import com.android.volley.Response
 
 class WeatherAdapter(val listener: Listener?) : ListAdapter<WeatherModel, WeatherAdapter.Holder>(Comparator()) {
     class Holder(view: View, val listener: Listener?) : RecyclerView.ViewHolder(view){

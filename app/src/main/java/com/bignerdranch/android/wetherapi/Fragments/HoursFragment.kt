@@ -1,18 +1,16 @@
 package com.bignerdranch.android.wetherapi.Fragments
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import com.bignerdranch.android.wetherapi.R
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bignerdranch.android.wetherapi.MainViewModel
 import com.bignerdranch.android.wetherapi.adapters.WeatherAdapter
 import com.bignerdranch.android.wetherapi.adapters.WeatherModel
 import com.bignerdranch.android.wetherapi.databinding.FragmentHoursBinding
-import com.bignerdranch.android.wetherapi.databinding.FragmentMainBinding
 import org.json.JSONArray
 import org.json.JSONObject
 
