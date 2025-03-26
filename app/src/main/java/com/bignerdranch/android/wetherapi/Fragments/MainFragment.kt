@@ -34,6 +34,12 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationToken
 import com.google.android.gms.tasks.CancellationTokenSource
 import okhttp3.OkHttpClient
+import android.app.Dialog
+import android.content.Context
+import android.content.Intent
+import android.location.LocationManager
+import android.provider.Settings
+import com.bignerdranch.android.wetherapi.DialogManager
 
 const val API_KEY = "705bc494d10c4699911154110252203"
 class MainFragment: Fragment(){
@@ -63,7 +69,11 @@ class MainFragment: Fragment(){
         checkPermission()
         init()
         updateCurrentCard()
-        getLocation()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkLocation()
     }
 
     private fun init() = with(binding){
@@ -75,8 +85,26 @@ class MainFragment: Fragment(){
         }.attach()
         ibSync.setOnClickListener{
             tabLayout.selectTab(tabLayout.getTabAt(0))
-            getLocation()
+            checkLocation()
         }
+    }
+
+    private fun checkLocation(){
+        if(isLocationEnabled()){
+            getLocation()
+        }else{
+            DialogManager.locationSettiongsDialog(requireContext(), object : DialogManager.Listener{
+                override fun onClick() {
+                    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                }
+
+            })
+        }
+    }
+
+    private fun isLocationEnabled(): Boolean{
+        val lm = activity?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
     }
 
     private fun getLocation(){
