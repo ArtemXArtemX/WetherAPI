@@ -1,9 +1,5 @@
 package com.bignerdranch.android.wetherapi
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
 data class DayItem(
     val id: Int? = null,
 

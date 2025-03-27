@@ -5,7 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.bignerdranch.android.wetherapi.DayItem
 import com.bignerdranch.android.wetherapi.adapters.WeatherModel
 
 @Database(entities = [ WeatherModel::class ], version=1)
