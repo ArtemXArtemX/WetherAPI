@@ -46,6 +46,7 @@ class HoursFragment : Fragment() {
         val list = ArrayList<WeatherModel>()
         for(i in 0 until hoursArray.length()){
             val item = WeatherModel(
+                null,
                 wItem.city,
                 (hoursArray[i] as JSONObject).getString("time"),
                 (hoursArray[i] as JSONObject).getJSONObject("condition")

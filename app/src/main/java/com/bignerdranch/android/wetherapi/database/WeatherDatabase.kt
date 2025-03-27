@@ -6,8 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.bignerdranch.android.wetherapi.DayItem
+import com.bignerdranch.android.wetherapi.adapters.WeatherModel
 
-@Database(entities = [ DayItem::class ], version=1)
+@Database(entities = [ WeatherModel::class ], version=1)
 @TypeConverters(WeatherTypeConverters::class)
 abstract class WeatherDatabase : RoomDatabase() {
     abstract fun getDao(): WeatherDao
@@ -16,7 +17,7 @@ abstract class WeatherDatabase : RoomDatabase() {
             return Room.databaseBuilder(
                 context.applicationContext,
                 WeatherDatabase::class.java,
-                "weatherDB.db"
+                "weatherDataBase.db"
             ).build()
         }
     }

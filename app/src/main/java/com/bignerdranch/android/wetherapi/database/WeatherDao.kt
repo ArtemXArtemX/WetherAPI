@@ -5,21 +5,20 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.bignerdranch.android.wetherapi.DayItem
-import java.util.UUID
+import com.bignerdranch.android.wetherapi.adapters.WeatherModel
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WeatherDao {
     @Insert
-    fun insertItem(item: DayItem)
-    @Query("SELECT * FROM items")
-    fun getAllItem(): Flow<List<DayItem>>
-    @Query("SELECT * FROM items WHERE id=(:id)")
-    fun getItem(id: UUID): LiveData<DayItem?>
+    fun insertItem(item: WeatherModel)
+    @Query("SELECT * FROM wItems")
+    fun getAllItem(): Flow<List<WeatherModel>>
+    @Query("SELECT * FROM wItems WHERE id=(:id)")
+    fun getItem(id: Int?): LiveData<WeatherModel?>
     @Update
-    fun updateItem(dayItem: DayItem)
-    @Query("DELETE FROM items")
+    fun updateItem(dayItem: WeatherModel)
+    @Query("DELETE FROM wItems")
     fun deleteItem()
 
 }

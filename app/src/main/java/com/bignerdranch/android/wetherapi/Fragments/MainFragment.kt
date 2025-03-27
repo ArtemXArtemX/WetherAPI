@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -19,10 +21,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
-import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import com.bignerdranch.android.wetherapi.DayItem
 import com.bignerdranch.android.wetherapi.DialogManager
 import com.bignerdranch.android.wetherapi.MainViewModel
 import com.bignerdranch.android.wetherapi.adapters.VpAdapter
@@ -35,10 +35,8 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.tabs.TabLayoutMediator
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.flow.Flow
 import org.json.JSONObject
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-
 
 const val API_KEY = "705bc494d10c4699911154110252203"
 class MainFragment: Fragment(){
@@ -51,7 +49,6 @@ class MainFragment: Fragment(){
         "Hours",
         "Days"
     )
-
     private lateinit var pLauncher: ActivityResultLauncher<String>
     private lateinit var binding: FragmentMainBinding
     private val model: MainViewModel by activityViewModels()
@@ -104,7 +101,6 @@ class MainFragment: Fragment(){
                 override fun onClick(name: String?) {
                     startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
                 }
-
             })
         }
     }
@@ -131,39 +127,31 @@ class MainFragment: Fragment(){
             .addOnCompleteListener {
                 requestWeatherData("${it.result.latitude},${it.result.longitude}")
             }
-        }
+    }
 
     private fun updateCurrentCard() = with(binding){
-        val db = WeatherDatabase.getDb(requireContext())
-        if(isOnline(requireContext())) {
-            model.liveDataCurrent.observe(viewLifecycleOwner) {
-                val item = DayItem(
-                    null,
-                    it.city,
-                    it.time,
-                    it.condition,
-                    it.imageUrl,
-                    it.currentTemp,
-                    it.maxTemp,
-                    it.minTemp,
-                    it.hours
-                )
-                Thread {
-                    db.getDao().deleteItem()
-                    db.getDao().insertItem(item)
-                }.start()
-            }
+        model.liveDataCurrent.observe(viewLifecycleOwner) {
+            val maxMinTemp = "${it.maxTemp}°C/${it.minTemp}°C"
+            tvData.text = it.time
+            tvCity.text = it.city
+            tvCurrentTemp.text = it.currentTemp.ifEmpty { "${it.maxTemp}°C/${it.minTemp}" } + "°C"
+            tvCondition.text = it.condition
+            tvMaxMin.text = if(it.currentTemp.isEmpty()) "" else maxMinTemp
+            Picasso.get().load("https:" + it.imageUrl).into(imWeather)
         }
-        db.getDao().getAllItem().asLiveData().observe(viewLifecycleOwner){list ->
-            list.forEach{item ->
-                val maxMinTemp = "${item.maxTemp}°C/${item.minTemp}°C"
-                tvData.text = item.time
-                tvCity.text = item.city
-                tvCurrentTemp.text = item.currentTemp.ifEmpty { "${item.maxTemp}°C/${item.minTemp}" } + "°C"
-                tvCondition.text = item.condition
-                tvMaxMin.text = if(item.currentTemp.isEmpty()) "" else maxMinTemp
-                Picasso.get().load("https:" + item.imageUrl).into(imWeather)
-            }
+
+    }
+
+    private fun permissionListener(){
+        pLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()){
+            Toast.makeText(activity, "Permission is $it", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private  fun checkPermission(){
+        if(!isPermissionGranted(Manifest.permission.ACCESS_FINE_LOCATION)){
+            permissionListener()
+            pLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
@@ -177,13 +165,13 @@ class MainFragment: Fragment(){
                 "&aqi=no&alerts=no"
         val queue = Volley.newRequestQueue(context)
         val request = StringRequest(
-            Request.Method.GET,
+            com.android.volley.Request.Method.GET,
             url,
             {
                     result -> parseWeatherData(result)
             },
             {
-                    error -> Log.d("MyLog", "Error: $error")
+                    error -> getDataFromDB()
             }
         )
         queue.add(request)
@@ -196,13 +184,18 @@ class MainFragment: Fragment(){
     }
 
     private fun parseDays(mainObject: JSONObject): List<WeatherModel>{
+        val db = WeatherDatabase.getDb(requireContext())
         val list = ArrayList<WeatherModel>()
+        Thread{
+            db.getDao().deleteItem()
+        }.start()
         val daysArray = mainObject.getJSONObject("forecast")
             .getJSONArray("forecastday")
         val name = mainObject.getJSONObject("location").getString("name")
-        for(i in 0 until daysArray.length()){
+        for (i in 0 until daysArray.length()) {
             val day = daysArray[i] as JSONObject
             val item = WeatherModel(
+                null,
                 name,
                 day.getString("date"),
                 day.getJSONObject("day").getJSONObject("condition")
@@ -215,9 +208,80 @@ class MainFragment: Fragment(){
                 day.getJSONArray("hour").toString()
             )
             list.add(item)
+            Thread {
+                db.getDao().getAllItem()
+                db.getDao().insertItem(item)
+            }.start()
         }
         model.liveDataList.value = list
+
         return list
+    }
+
+    private fun getDataFromDB(): List<WeatherModel>{
+        val db = WeatherDatabase.getDb(requireContext())
+        var i = 0
+        val list = ArrayList<WeatherModel>()
+        val weatherList: Flow<List<WeatherModel>> = db.getDao().getAllItem()
+        db.getDao().getAllItem().asLiveData().observe(viewLifecycleOwner) {
+            it.forEach{item ->
+                val itemD = WeatherModel(
+                    item.id,
+                    item.city,
+                    item.time,
+                    item.condition,
+                    item.currentTemp,
+                    item.maxTemp,
+                    item.minTemp,
+                    item.imageUrl,
+                    item.hours
+                )
+                list.add(itemD)
+                model.liveDataList.value = model.liveDataList.value?.toMutableList()?.apply { add(itemD) }?: emptyList()
+                if(i == 0){
+                    parseCurrentDataDB(itemD)
+                }
+                i++
+            }
+        }
+        //model.liveDataList.value = list
+        //parseCurrentDataDB(list[0])
+        return list
+    }
+
+    private fun parseCurrentData(mainObject: JSONObject, weatherItem: WeatherModel){
+        val item = WeatherModel(
+            null,
+            mainObject.getJSONObject("location").getString("name"),
+            mainObject.getJSONObject("current").getString("last_updated"),
+            mainObject.getJSONObject("current").getJSONObject("condition").getString("text"),
+            mainObject.getJSONObject("current").getString("temp_c"),
+            weatherItem.maxTemp,
+            weatherItem.minTemp,
+            mainObject.getJSONObject("current").getJSONObject("condition").getString("icon"),
+            weatherItem.hours
+        )
+        model.liveDataCurrent.value = item
+    }
+
+    private fun parseCurrentDataDB(weatherItem: WeatherModel){
+        val db = WeatherDatabase.getDb(requireContext())
+        db.getDao().getItem(weatherItem.id).observe(viewLifecycleOwner) { it ->
+            val item = it?.let { it1 ->
+                WeatherModel(
+                    it1.id,
+                    it1.city,
+                    it1.time,
+                    it1.condition,
+                    it1.currentTemp,
+                    weatherItem.maxTemp,
+                    weatherItem.minTemp,
+                    it1.imageUrl,
+                    weatherItem.hours
+                )
+            }
+            model.liveDataCurrent.value = item
+        }
     }
 
     fun isOnline(context: Context): Boolean {
@@ -240,34 +304,6 @@ class MainFragment: Fragment(){
             }
         }
         return false
-    }
-
-    private fun parseCurrentData(mainObject: JSONObject, weatherItem: WeatherModel){
-        val item = WeatherModel(
-            mainObject.getJSONObject("location").getString("name"),
-            mainObject.getJSONObject("current").getString("last_updated"),
-            mainObject.getJSONObject("current").getJSONObject("condition").getString("text"),
-            mainObject.getJSONObject("current").getString("temp_c"),
-            weatherItem.maxTemp,
-            weatherItem.minTemp,
-            mainObject.getJSONObject("current").getJSONObject("condition").getString("icon"),
-            weatherItem.hours
-        )
-
-        model.liveDataCurrent.value = item
-    }
-
-    private fun permissionListener(){
-        pLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()){
-            Toast.makeText(activity, "Permission is $it", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private  fun checkPermission(){
-        if(!isPermissionGranted(Manifest.permission.ACCESS_FINE_LOCATION)){
-            permissionListener()
-            pLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
     }
 
     companion object {
